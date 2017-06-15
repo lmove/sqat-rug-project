@@ -63,7 +63,6 @@ test bool testTwitter()
 /*
  * 3. Don't statement
  */
-
 Statement desugar((Statement)`dont <Statement _>`) 
 	= (Statement) `;`;
 
