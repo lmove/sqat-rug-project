@@ -86,14 +86,14 @@ test bool testForeach()
 /*
  * 4. Arrow functions: Id "=\>" Expression
  */
-Expression desugar((Expression)`<Id param> =\> <Expression body>`) {
-	Expression bodyThis = replaceThis(body);
-	return (Expression)	`(function(_this){
-						'	return function(<Id param>){
-						'		return <Expression bodyThis>;
-						'	};
-						'})(this)`;
-}
+Expression desugar((Expression)`<Id param> =\> <Expression body>`) 
+	= (Expression) `(function(_this){
+		'	return function(<Id param>){
+		'		return <Expression bodyThis>;
+		'	};
+		'})(this)`
+		when Expression bodyThis := replaceThis(body);
+
 
 Expression replaceThis(Expression e) {
   return top-down-break visit (e) {
@@ -124,8 +124,40 @@ test bool testArrowWithThis()
  *    Generator: Expression | Id ":" Expression
  */
 Expression desugar((Expression)`[ <Expression r> | <{Generator ","}+ gens> ]`) {
-	return 0;/* you should replace this dummyExp();*/
+	Statement s := mapGens(r, gens);
+	return (Expression)	`(function() {
+				'	var result = [];
+				'	<Statement s>
+				'	return result;	
+				'})()`;
 } 
- 
+
+Statement mapGens(Expression r, <{Generator ","}+ gens>) {
+	list[Generator] reverseGens = reverse([g | g <- gens]);
+	Statment s = (Statement) `result.push(<Expression r>);`;
+	
+	for(int i <- [0 .. size(gens)]){
+		s = mapStatement(s, gens[i]);
+	}
+	
+	return s;
+}
+
+Statement mapStatement(Statement previous, (Generator) `var <Id id> in <Expression e>`) {
+	return (Statement) `{
+				'	var coll = <Expression e>;
+				'	for(var i = 0; i \< col.length; i++) {
+				'		var <Id id> = coll[i];
+				'		<Statement previous>
+				'	}
+				'}`;
+}
+
+default Statement mapStatement(Statement previous, (Generator) `<Expression e>`) {
+	return (Statement) `if(e){
+				'	<Statement previous>
+				'}`;
+}
+
 Expression dummyExp() = (Expression)`NOT_YET_IMPLEMENTED`;
 Statement dummyStat() = (Statement)`NOT_YET_IMPLEMENTED;`;
