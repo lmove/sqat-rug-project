@@ -124,7 +124,7 @@ test bool testArrowWithThis()
  *    Generator: Expression | Id ":" Expression
  */
 Expression desugar((Expression)`[ <Expression r> | <{Generator ","}+ gens> ]`) {
-	Statement s := mapGens(r, gens);
+	Statement s = mapGens(r, gens);
 	return (Expression)	`(function() {
 				'	var result = [];
 				'	<Statement s>
@@ -132,12 +132,12 @@ Expression desugar((Expression)`[ <Expression r> | <{Generator ","}+ gens> ]`) {
 				'})()`;
 } 
 
-Statement mapGens(Expression r, <{Generator ","}+ gens>) {
+Statement mapGens(Expression r, {Generator ","}+ gens) {
 	list[Generator] reverseGens = reverse([g | g <- gens]);
-	Statment s = (Statement) `result.push(<Expression r>);`;
+	Statement s = (Statement) `result.push(<Expression r>);`;
 	
-	for(int i <- [0 .. size(gens)]){
-		s = mapStatement(s, gens[i]);
+	for(g <- reverseGens){
+		s = mapStatement(s, g);
 	}
 	
 	return s;
@@ -146,7 +146,7 @@ Statement mapGens(Expression r, <{Generator ","}+ gens>) {
 Statement mapStatement(Statement previous, (Generator) `var <Id id> in <Expression e>`) {
 	return (Statement) `{
 				'	var coll = <Expression e>;
-				'	for(var i = 0; i \< col.length; i++) {
+				'	for(var i = 0; i \< coll.length; i++) {
 				'		var <Id id> = coll[i];
 				'		<Statement previous>
 				'	}
@@ -154,7 +154,7 @@ Statement mapStatement(Statement previous, (Generator) `var <Id id> in <Expressi
 }
 
 default Statement mapStatement(Statement previous, (Generator) `<Expression e>`) {
-	return (Statement) `if(e){
+	return (Statement) `if(<Expression e>){
 				'	<Statement previous>
 				'}`;
 }
